@@ -34,6 +34,7 @@ pub mod taskwarrior;
 pub mod temperature;
 pub mod template;
 pub mod time;
+pub mod timewarrior;
 pub mod toggle;
 pub mod uptime;
 pub mod watson;
@@ -76,6 +77,7 @@ use self::taskwarrior::*;
 use self::temperature::*;
 use self::template::*;
 use self::time::*;
+use self::timewarrior::*;
 use self::toggle::*;
 use self::uptime::*;
 use self::watson::*;
@@ -275,6 +277,7 @@ pub fn create_block(
         "temperature" => block!(Temperature, id, block_config, shared_config, update_request),
         "template" => block!(Template, id, block_config, shared_config, update_request),
         "time" => block!(Time, id, block_config, shared_config, update_request), /////////
+        "timewarrior" => block!(TimeWarrior, id, block_config, shared_config, update_request),
         "toggle" => block!(Toggle, id, block_config, shared_config, update_request),
         "uptime" => block!(Uptime, id, block_config, shared_config, update_request),
         "watson" => block!(Watson, id, block_config, shared_config, update_request),

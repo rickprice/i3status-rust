@@ -14,7 +14,7 @@ use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
 use crate::widgets::{I3BarWidget, State};
 
-pub struct Toggle {
+pub struct TimeWarrior {
     id: usize,
     text: TextWidget,
     command_on: String,
@@ -28,33 +28,48 @@ pub struct Toggle {
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct ToggleConfig {
+pub struct TimeWarriorConfig {
     /// Update interval in seconds
     #[serde(default, deserialize_with = "deserialize_opt_duration")]
     pub interval: Option<Duration>,
 
-    /// Shell Command to enable the toggle
+    /// Shell Command to enable TimeWarrior time tracking
+    #[serde(default = "TimeWarriorConfig::default_command_on")]
     pub command_on: String,
 
-    /// Shell Command to disable the toggle
+    /// Shell Command to disable TimeWarrior time tracking
+    #[serde(default = "TimeWarriorConfig::default_command_off")]
     pub command_off: String,
 
-    /// Shell Command to determine toggle state. <br/>Empty output => off. Any output => on.
+    /// Shell Command to determine TimeWarrior state.
+    #[serde(default = "TimeWarriorConfig::default_command_state")]
     pub command_state: String,
 
-    /// Icon ID when toggled on (default is "toggle_on")
-    #[serde(default = "ToggleConfig::default_icon_on")]
+    /// Icon ID when time tracking is on (default is "toggle_on")
+    #[serde(default = "TimeWarriorConfig::default_icon_on")]
     pub icon_on: String,
 
-    /// Icon ID when toggled off (default is "toggle_off")
-    #[serde(default = "ToggleConfig::default_icon_off")]
+    /// Icon ID when time tracking is off (default is "toggle_off")
+    #[serde(default = "TimeWarriorConfig::default_icon_off")]
     pub icon_off: String,
 
     /// Text to display in i3bar for this block
     pub text: Option<String>,
 }
 
-impl ToggleConfig {
+impl TimeWarriorConfig {
+    fn default_command_on() -> String {
+        "timew continue".to_owned()
+    }
+
+    fn default_command_off() -> String {
+        "timew stop".to_owned()
+    }
+
+    fn default_command_state() -> String {
+        "timew".to_owned()
+    }
+
     fn default_icon_on() -> String {
         "toggle_on".to_owned()
     }
@@ -64,8 +79,8 @@ impl ToggleConfig {
     }
 }
 
-impl ConfigBlock for Toggle {
-    type Config = ToggleConfig;
+impl ConfigBlock for TimeWarrior {
+    type Config = TimeWarriorConfig;
 
     fn new(
         id: usize,
@@ -73,7 +88,7 @@ impl ConfigBlock for Toggle {
         shared_config: SharedConfig,
         _tx_update_request: Sender<Task>,
     ) -> Result<Self> {
-        Ok(Toggle {
+        Ok(TimeWarrior {
             id,
             text: TextWidget::new(id, 0, shared_config)
                 .with_text(&block_config.text.unwrap_or_default()),
@@ -88,7 +103,7 @@ impl ConfigBlock for Toggle {
     }
 }
 
-impl Block for Toggle {
+impl Block for TimeWarrior {
     fn update(&mut self) -> Result<Option<Update>> {
         let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
             .args(&["-c", &self.command_state])
@@ -97,15 +112,25 @@ impl Block for Toggle {
             .unwrap_or_else(|e| e.to_string());
 
         self.text.set_icon(match output.trim_start() {
-            "" => {
+            "There is no active time tracking." => {
                 self.toggled = false;
                 self.icon_off.as_str()
             }
             _ => {
                 self.toggled = true;
+                // self.text.set_text("Is active".as_ref());
                 self.icon_on.as_str()
             }
         })?;
+
+        self.text.set_text(match self.toggled {
+            true => {
+                "Toggled".to_owned()
+            }
+            _ => {
+                "Not toggled".to_owned()
+            }
+        });
 
         self.text.set_state(State::Idle);
 
