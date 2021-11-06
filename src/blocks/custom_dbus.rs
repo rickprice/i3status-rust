@@ -11,6 +11,7 @@ use serde_derive::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
+use crate::de::deserialize_opt_duration;
 use crate::errors::*;
 use crate::scheduler::Task;
 use crate::widgets::text::TextWidget;
@@ -27,12 +28,31 @@ pub struct CustomDBus {
     id: usize,
     text: TextWidget,
     status: Arc<Mutex<CustomDBusStatus>>,
+    timeout: Option<Duration>,
+    clear_pending: Option<Instant>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct CustomDBusConfig {
     pub name: String,
+
+    /// Text to display on startup until the first update is received on the bus.
+    pub initial_text: String,
+
+    /// Timeout for clearing the block output after an update (in seconds)
+    #[serde(default, deserialize_with = "deserialize_opt_duration")]
+    pub timeout: Option<Duration>,
+}
+
+impl Default for CustomDBusConfig {
+    fn default() -> Self {
+        Self {
+            name: Default::default(),
+            initial_text: "??".to_string(),
+            timeout: None,
+        }
+    }
 }
 
 impl ConfigBlock for CustomDBus {
@@ -45,7 +65,7 @@ impl ConfigBlock for CustomDBus {
         send: Sender<Task>,
     ) -> Result<Self> {
         let status_original = Arc::new(Mutex::new(CustomDBusStatus {
-            content: String::from("??"),
+            content: String::from(block_config.initial_text),
             icon: String::from(""),
             state: State::Idle,
         }));
@@ -120,7 +140,13 @@ impl ConfigBlock for CustomDBus {
             .unwrap();
 
         let text = TextWidget::new(id, 0, shared_config).with_text("CustomDBus");
-        Ok(CustomDBus { id, text, status })
+        Ok(CustomDBus {
+            id,
+            text,
+            status,
+            timeout: block_config.timeout,
+            clear_pending: None,
+        })
     }
 }
 
@@ -136,6 +162,16 @@ impl Block for CustomDBus {
             .lock()
             .block_error("custom_dbus", "failed to acquire lock")?)
         .clone();
+
+        let now = Instant::now();
+        if let Some(time) = self.clear_pending {
+            if time < now {
+                self.clear_pending = None;
+                self.text.set_text(String::from(""));
+                return Ok(None);
+            }
+        }
+
         self.text.set_text(status.content);
         if status.icon.is_empty() {
             self.text.unset_icon();
@@ -143,7 +179,13 @@ impl Block for CustomDBus {
             self.text.set_icon(&status.icon)?;
         }
         self.text.set_state(status.state);
-        Ok(None)
+
+        if let Some(delay) = self.timeout {
+            self.clear_pending = Some(now + delay);
+            Ok(Some(delay.into()))
+        } else {
+            Ok(None)
+        }
     }
 
     // Returns the view of the block, comprised of widgets.
