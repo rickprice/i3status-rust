@@ -3,7 +3,9 @@ use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
-use serde_derive::Deserialize;
+use serde::{Deserialize};
+// use serde_derive::{Serialize, Deserialize};
+use regex::Regex;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
@@ -20,13 +22,16 @@ pub struct TimeWarrior {
     command_on: String,
     command_off: String,
     command_state: String,
+    command_status_display: String,
+    command_status_display_regex: Regex,
+    command_status_tags_display_regex: Regex,
     icon_on: String,
     icon_off: String,
     update_interval: Option<Duration>,
     toggled: bool,
 }
 
-#[derive(Deserialize, Debug, Default, Clone)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
 pub struct TimeWarriorConfig {
     /// Update interval in seconds
@@ -44,6 +49,19 @@ pub struct TimeWarriorConfig {
     /// Shell Command to determine TimeWarrior state.
     #[serde(default = "TimeWarriorConfig::default_command_state")]
     pub command_state: String,
+
+    /// Shell Command to determine TimeWarrior display info.
+    #[serde(default = "TimeWarriorConfig::default_command_status_display")]
+    pub command_status_display: String,
+
+
+    #[serde(default = "TimeWarriorConfig::default_command_status_display_regex")]
+    #[serde(with="serde_regex")]
+    pub command_status_display_regex: Regex,
+
+    #[serde(default = "TimeWarriorConfig::default_command_status_tags_display_regex")]
+    #[serde(with="serde_regex")]
+    pub command_status_tags_display_regex: Regex,
 
     /// Icon ID when time tracking is on (default is "toggle_on")
     #[serde(default = "TimeWarriorConfig::default_icon_on")]
@@ -68,6 +86,19 @@ impl TimeWarriorConfig {
 
     fn default_command_state() -> String {
         "timew".to_owned()
+    }
+
+    fn default_command_status_display() -> String {
+        "timew day".to_owned()
+    }
+
+    fn default_command_status_display_regex() -> Regex {
+        Regex::new(r"^\d{4}-\d{2}-\d{2}$").unwrap()
+    }
+
+
+    fn default_command_status_tags_display_regex() -> Regex {
+        Regex::new(r"^\d{4}-\d{2}-\d{2}$").unwrap()
     }
 
     fn default_icon_on() -> String {
@@ -95,6 +126,9 @@ impl ConfigBlock for TimeWarrior {
             command_on: block_config.command_on,
             command_off: block_config.command_off,
             command_state: block_config.command_state,
+            command_status_display: block_config.command_status_display,
+            command_status_display_regex: block_config.command_status_display_regex,
+            command_status_tags_display_regex: block_config.command_status_tags_display_regex,
             icon_on: block_config.icon_on,
             icon_off: block_config.icon_off,
             toggled: false,
@@ -125,7 +159,14 @@ impl Block for TimeWarrior {
 
         self.text.set_text(match self.toggled {
             true => {
-                "Toggled".to_owned()
+                let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
+                    .args(&["-c", &self.command_status_display])
+                    .output()
+                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+                    .unwrap_or_else(|e| e.to_string());
+
+                // So now, here we just need to crack the returned data and do something useful
+                output.to_owned()
             }
             _ => {
                 "Not toggled".to_owned()
