@@ -96,7 +96,7 @@ impl TimeWarriorConfig {
     }
 
     fn default_command_status_tags_display_regex() -> Regex {
-        Regex::new(r"^Tracking (?P<tags>.*)$").unwrap()
+        Regex::new(r"Tracking (?P<tags>.+)\n").unwrap()
     }
 
     fn default_icon_on() -> String {
@@ -146,7 +146,7 @@ impl Block for TimeWarrior {
         // I think only toggled should be set here, and icon_text should be set on the icon in its
         // own match
         let (toggled, tags) = match self.command_status_tags_display_regex.captures(&output) {
-            None => (false, ""),
+            None => (false, "NOT FOUND"),
             Some(captures) => {
                 let tags = captures.name("tags").map_or("", |m| m.as_str());
                 (true, tags)
@@ -162,6 +162,7 @@ impl Block for TimeWarrior {
         })?;
 
         // +++ REMOVE THIS +++
+        // self.text.set_text(output.to_string());
         self.text.set_text(tags.to_string());
         // +++ REMOVE THIS +++
 
