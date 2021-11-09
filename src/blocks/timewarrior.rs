@@ -5,7 +5,6 @@ use std::time::Duration;
 use crossbeam_channel::Sender;
 use serde::Deserialize;
 // use serde_derive::{Serialize, Deserialize};
-use regex::Captures;
 use regex::Regex;
 
 use crate::blocks::{Block, ConfigBlock, Update};
@@ -97,7 +96,7 @@ impl TimeWarriorConfig {
     }
 
     fn default_command_status_tags_display_regex() -> Regex {
-        Regex::new(r"?P<tags>.*)").unwrap()
+        Regex::new(r"^Tracking (?P<tags>.*)$").unwrap()
     }
 
     fn default_icon_on() -> String {
@@ -146,46 +145,46 @@ impl Block for TimeWarrior {
 
         // I think only toggled should be set here, and icon_text should be set on the icon in its
         // own match
-        let (toggled, icon_text, tags) =
-            match self.command_status_tags_display_regex.captures(&output) {
-                _ => (false, self.icon_off.as_str(), ""),
-                Some(captures) => {
-                    let tags = captures.name("tags").map_or("", |m| m.as_str());
-                    (true, self.icon_on.as_str(), tags)
-                }
-            };
-
-        self.toggled = toggled;
-        self.text.set_icon(icon_text);
-
-        let (icon_text, tag_data) = match output.trim_start() {
-            "There is no active time tracking." => {
-                self.toggled = false;
-                (self.icon_off.as_str(), "")
-            }
-            _ => {
-                self.toggled = true;
-                // self.text.set_text("Is active".as_ref());
-                (self.icon_on.as_str(), "Tags")
+        let (toggled, tags) = match self.command_status_tags_display_regex.captures(&output) {
+            None => (false, ""),
+            Some(captures) => {
+                let tags = captures.name("tags").map_or("", |m| m.as_str());
+                (true, tags)
             }
         };
 
-        self.text.set_icon(icon_text);
+        self.toggled = toggled;
 
-        // Here we need to add the Tags data and the hours data to create the output text
-        self.text.set_text(match self.toggled {
-            true => {
-                let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
-                    .args(&["-c", &self.command_status_display])
-                    .output()
-                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-                    .unwrap_or_else(|e| e.to_string());
 
-                // So now, here we just need to crack the returned data and do something useful
-                output.to_owned()
-            }
-            _ => "Not toggled".to_owned(),
-        });
+        self.text.set_icon(match self.toggled {
+            true => self.icon_on.as_str(),
+            false => self.icon_off.as_str(),
+        })?;
+
+        // +++ REMOVE THIS +++
+        self.text.set_text(tags.to_string());
+        // +++ REMOVE THIS +++
+
+        // // Here we need to add the Tags data and the hours data to create the output text
+        // self.text.set_text(match self.toggled {
+        //     true => {
+        //         // Figure out the hours data now
+        //         let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
+        //             .args(&["-c", &self.command_status_display])
+        //             .output()
+        //             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+        //             .unwrap_or_else(|e| e.to_string());
+
+        //         // I think only toggled should be set here, and icon_text should be set on the icon in its
+        //         // own match
+        //         let hours = match self.command_status_display_regex.captures(&output) {
+        //             _ => "",
+        //             Some(captures) => captures.name("hours").map_or("", |m| m.as_str()),
+        //         };
+        //         "Unfinished".to_owned()
+        //     },
+        //     _ => "Not toggled".to_owned(),
+        // });
 
         self.text.set_state(State::Idle);
 
