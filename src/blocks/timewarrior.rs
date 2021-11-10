@@ -179,7 +179,7 @@ impl Block for TimeWarrior {
                 // I think only toggled should be set here, and icon_text should be set on the icon in its
                 // own match
                 let hours = match self.command_status_display_regex.captures(&output) {
-                    _ => "",
+                    None => "",
                     Some(captures) => captures.name("hours").map_or("", |m| m.as_str()),
                 };
                 hours.to_string()
