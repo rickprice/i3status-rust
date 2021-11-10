@@ -92,7 +92,7 @@ impl TimeWarriorConfig {
     }
 
     fn default_command_status_display_regex() -> Regex {
-        Regex::new(r"^\d{4}-\d{2}-\d{2}$").unwrap()
+        Regex::new(r"(?m)Tracked\s+(?P<hours>\d{1,2}:\d{1,2}:\d{1,2})").unwrap()
     }
 
     fn default_command_status_tags_display_regex() -> Regex {
@@ -163,29 +163,30 @@ impl Block for TimeWarrior {
 
         // +++ REMOVE THIS +++
         // self.text.set_text(output.to_string());
-        self.text.set_text(tags.to_string());
+        // self.text.set_text(tags.to_string());
         // +++ REMOVE THIS +++
 
-        // // Here we need to add the Tags data and the hours data to create the output text
-        // self.text.set_text(match self.toggled {
-        //     true => {
-        //         // Figure out the hours data now
-        //         let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
-        //             .args(&["-c", &self.command_status_display])
-        //             .output()
-        //             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-        //             .unwrap_or_else(|e| e.to_string());
+        // Here we need to add the Tags data and the hours data to create the output text
+        self.text.set_text(match self.toggled {
+            true => {
+                // Figure out the hours data now
+                let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
+                    .args(&["-c", &self.command_status_display])
+                    .output()
+                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
+                    .unwrap_or_else(|e| e.to_string());
 
-        //         // I think only toggled should be set here, and icon_text should be set on the icon in its
-        //         // own match
-        //         let hours = match self.command_status_display_regex.captures(&output) {
-        //             _ => "",
-        //             Some(captures) => captures.name("hours").map_or("", |m| m.as_str()),
-        //         };
-        //         "Unfinished".to_owned()
-        //     },
-        //     _ => "Not toggled".to_owned(),
-        // });
+                // I think only toggled should be set here, and icon_text should be set on the icon in its
+                // own match
+                let hours = match self.command_status_display_regex.captures(&output) {
+                    _ => "",
+                    Some(captures) => captures.name("hours").map_or("", |m| m.as_str()),
+                };
+                hours.to_string()
+                // output.to_string()
+            },
+            _ => "Not toggled".to_owned(),
+        });
 
         self.text.set_state(State::Idle);
 
