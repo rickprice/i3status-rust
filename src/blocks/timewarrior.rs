@@ -182,8 +182,12 @@ impl Block for TimeWarrior {
                     None => "",
                     Some(captures) => captures.name("hours").map_or("", |m| m.as_str()),
                 };
-                hours.to_string()
-                // output.to_string()
+                let mut display_text = String::new();
+                display_text.push_str("[ ");
+                display_text.push_str(tags);
+                display_text.push_str(" ] ");
+                display_text.push_str(hours);
+                display_text
             },
             _ => "Not toggled".to_owned(),
         });
