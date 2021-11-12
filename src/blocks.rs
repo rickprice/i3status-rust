@@ -108,9 +108,9 @@ impl Default for Update {
     }
 }
 
-impl Into<Update> for Duration {
-    fn into(self) -> Update {
-        Update::Every(self)
+impl From<Duration> for Update {
+    fn from(d: Duration) -> Update {
+        Update::Every(d)
     }
 }
 

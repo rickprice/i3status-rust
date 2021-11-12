@@ -4,7 +4,7 @@ description = "A feature-rich and resource-friendly replacement for i3status, wr
 repository = "https://github.com/greshake/i3status-rust/"
 readme = "README.md"
 license = "GPLv3"
-version = "0.20.6"
+version = "0.20.7"
 authors = ["Kai Greshake <development@kai-greshake.de>",
            "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)"]
 edition = "2018"
@@ -23,7 +23,7 @@ curl = "0.4"
 dbus = "0.9"
 dbus-tree = "0.9"
 lazy_static = "1.0"
-nix = "0.20.0"
+nix = "0.23.0"
 nl80211 = "0.0.2"
 serde = "1.0"
 serde_derive = "1.0"
@@ -36,7 +36,7 @@ toml = "0.5"
 
 # Optional features/blocks
 libpulse-binding = { optional = true, version = "2.0", default-features = false }
-notmuch = { optional = true, version = "0.6.0" }
+notmuch = { optional = true, version = "0.7.0" }
 maildir = { optional = true, version = "0.5" }
 # Used only in debug build for profiling blocks
 cpuprofiler = { version = "0.0.4", optional = true }
@@ -47,7 +47,7 @@ version = "0.4"
 features = ["unstable-locales"]
 
 [dependencies.chrono-tz]
-version = "0.5"
+version = "0.6"
 features = ["serde"]
 
 [dependencies.clap]
