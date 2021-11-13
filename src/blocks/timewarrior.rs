@@ -155,16 +155,10 @@ impl Block for TimeWarrior {
 
         self.toggled = toggled;
 
-
         self.text.set_icon(match self.toggled {
             true => self.icon_on.as_str(),
             false => self.icon_off.as_str(),
         })?;
-
-        // +++ REMOVE THIS +++
-        // self.text.set_text(output.to_string());
-        // self.text.set_text(tags.to_string());
-        // +++ REMOVE THIS +++
 
         // Here we need to add the Tags data and the hours data to create the output text
         self.text.set_text(match self.toggled {
@@ -188,8 +182,8 @@ impl Block for TimeWarrior {
                 display_text.push_str(" ] ");
                 display_text.push_str(hours);
                 display_text
-            },
-            _ => "Not toggled".to_owned(),
+            }
+            false => "IDLE".to_owned(),
         });
 
         self.text.set_state(State::Idle);
@@ -216,6 +210,7 @@ impl Block for TimeWarrior {
         if output.status.success() {
             self.text.set_state(State::Idle);
             self.toggled = !self.toggled;
+            self.text.set_text("Updating...".to_owned());
             self.text.set_icon(if self.toggled {
                 self.icon_on.as_str()
             } else {
