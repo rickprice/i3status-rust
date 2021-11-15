@@ -211,6 +211,9 @@ impl Block for TimeWarrior {
             self.text.set_state(State::Idle);
             self.toggled = !self.toggled;
             self.text.set_text("Updating...".to_owned());
+
+            self.update().unwrap();
+
             self.text.set_icon(if self.toggled {
                 self.icon_on.as_str()
             } else {
