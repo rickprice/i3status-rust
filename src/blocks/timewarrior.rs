@@ -92,11 +92,11 @@ impl TimeWarriorConfig {
     }
 
     fn default_command_status_display_regex() -> Regex {
-        Regex::new(r"(?m)Tracked\s+(?P<hours>\d{1,2}:\d{1,2}:\d{1,2})").unwrap()
+        Regex::new(r"(?m)Tracked\s+(\d{1,2}:\d{1,2}:\d{1,2})").unwrap()
     }
 
     fn default_command_status_tags_display_regex() -> Regex {
-        Regex::new(r"Tracking (?P<tags>.+)\n").unwrap()
+        Regex::new(r"Tracking (.+)\n").unwrap()
     }
 
     fn default_icon_on() -> String {
@@ -148,7 +148,7 @@ impl Block for TimeWarrior {
         let (toggled, tags) = match self.command_status_tags_display_regex.captures(&output) {
             None => (false, "NOT FOUND"),
             Some(captures) => {
-                let tags = captures.name("tags").map_or("", |m| m.as_str());
+                let tags = captures.get(1).map_or("", |m| m.as_str());
                 (true, tags)
             }
         };
@@ -174,7 +174,7 @@ impl Block for TimeWarrior {
                 // own match
                 let hours = match self.command_status_display_regex.captures(&output) {
                     None => "",
-                    Some(captures) => captures.name("hours").map_or("", |m| m.as_str()),
+                    Some(captures) => captures.get(1).map_or("", |m| m.as_str()),
                 };
                 let mut display_text = String::new();
                 display_text.push_str("[ ");
