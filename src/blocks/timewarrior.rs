@@ -135,13 +135,18 @@ impl ConfigBlock for TimeWarrior {
     }
 }
 
+impl TimeWarrior {
+    fn get_output_of_command(&self, command: &str) -> Result<String> {
+        Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
+            .args(&["-c", command])
+            .output()
+            .map(|o| Ok(String::from_utf8_lossy(&o.stdout).trim().to_owned()))?
+    }
+}
+
 impl Block for TimeWarrior {
     fn update(&mut self) -> Result<Option<Update>> {
-        let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
-            .args(&["-c", &self.command_state])
-            .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .unwrap_or_else(|e| e.to_string());
+        let output = self.get_output_of_command(&self.command_state)?;
 
         // I think only toggled should be set here, and icon_text should be set on the icon in its
         // own match
@@ -164,11 +169,7 @@ impl Block for TimeWarrior {
         self.text.set_text(match self.toggled {
             true => {
                 // Figure out the hours data now
-                let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
-                    .args(&["-c", &self.command_status_display])
-                    .output()
-                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-                    .unwrap_or_else(|e| e.to_string());
+                let output = self.get_output_of_command(&self.command_status_display)?;
 
                 // I think only toggled should be set here, and icon_text should be set on the icon in its
                 // own match
@@ -202,12 +203,11 @@ impl Block for TimeWarrior {
             &self.command_on
         };
 
-        let output = Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
-            .args(&["-c", cmd])
-            .output()
-            .block_error("toggle", "failed to run toggle command")?;
+        let output = self
+            .get_output_of_command(cmd)
+            .block_error("toggle", "Failed to run toggle command");
 
-        if output.status.success() {
+        if output.is_ok() {
             self.text.set_state(State::Idle);
             self.toggled = !self.toggled;
             self.text.set_text("Updating...".to_owned());
