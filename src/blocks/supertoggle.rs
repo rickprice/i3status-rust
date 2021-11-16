@@ -187,20 +187,17 @@ impl Block for SuperToggle {
     fn update(&mut self) -> Result<Option<Update>> {
         let (on, tags) = &self.is_on_status()?;
 
-        let icon = match on {
+        self.text.set_icon(match on {
             true => self.icon_on.as_str(),
             false => self.icon_off.as_str(),
-        };
+        })?;
 
-        self.text.set_icon(icon)?;
+        let output = match on {
+            true => self.format_on.render(tags),
+            false => self.format_off.render(tags),
+        }?;
 
-        let format = match on {
-            true => &self.format_on,
-            false => &self.format_off,
-        };
-
-        let output = format.render(&tags)?;
-        self.text.set_texts(output.clone());
+        self.text.set_texts(output);
 
         self.text.set_state(State::Idle);
 
