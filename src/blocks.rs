@@ -30,6 +30,7 @@ pub mod pacman;
 pub mod pomodoro;
 pub mod sound;
 pub mod speedtest;
+pub mod supertoggle;
 pub mod taskwarrior;
 pub mod temperature;
 pub mod template;
@@ -73,6 +74,7 @@ use self::pacman::*;
 use self::pomodoro::*;
 use self::sound::*;
 use self::speedtest::*;
+use self::supertoggle::*;
 use self::taskwarrior::*;
 use self::temperature::*;
 use self::template::*;
@@ -278,6 +280,7 @@ pub fn create_block(
         "template" => block!(Template, id, block_config, shared_config, update_request),
         "time" => block!(Time, id, block_config, shared_config, update_request), /////////
         "timewarrior" => block!(TimeWarrior, id, block_config, shared_config, update_request),
+        "supertoggle" => block!(SuperToggle, id, block_config, shared_config, update_request),
         "toggle" => block!(Toggle, id, block_config, shared_config, update_request),
         "uptime" => block!(Uptime, id, block_config, shared_config, update_request),
         "watson" => block!(Watson, id, block_config, shared_config, update_request),
