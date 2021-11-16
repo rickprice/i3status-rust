@@ -152,39 +152,33 @@ impl ConfigBlock for SuperToggle {
     }
 }
 
+fn get_output_of_command(command: &str) -> Result<String> {
+    Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
+        .args(&["-c", command])
+        .output()
+        .map(|o| Ok(String::from_utf8_lossy(&o.stdout).trim().to_owned()))?
+}
+
+fn get_mapped_matches_from_string(totest: &str, regex: &Regex) -> Option<HashMap<String, Value>> {
+    Some(map!(
+        "testing".to_owned() => Value::from_string("testvalue".to_owned()),
+    ))
+}
+
 impl SuperToggle {
-    fn get_output_of_command(&self, command: &str) -> Result<String> {
-        Command::new(env::var("SHELL").unwrap_or_else(|_| "sh".to_owned()))
-            .args(&["-c", command])
-            .output()
-            .map(|o| Ok(String::from_utf8_lossy(&o.stdout).trim().to_owned()))?
-    }
+    fn is_on_status(&self) -> Result<(bool, HashMap<String, Value>)> {
+        let output = get_output_of_command(&self.command_current_state)?;
 
-    fn get_mapped_matches_from_string(
-        &self,
-        totest: &str,
-        regex: &Regex,
-    ) -> Option<HashMap<&str, Value>> {
-        Some(map!(
-            "testing" => Value::from_string("TestValue".to_owned()),
-        ))
-    }
-
-    fn is_on_status(&self) -> Result<(bool, HashMap<&str, Value>)> {
-        let output = self.get_output_of_command(&self.command_current_state)?;
-
-        match self.get_mapped_matches_from_string(&output, &self.command_data_on_regex) {
+        match get_mapped_matches_from_string(&output, &self.command_data_on_regex) {
             Some(x) => Ok((true, x)),
-            None => {
-                match self.get_mapped_matches_from_string(&output, &self.command_data_off_regex) {
-                    Some(x) => Ok((false, x)),
-                    None => Err(BlockError(
-                        "is_on_status".to_owned(),
-                        "Unable to match either the command_data_on or the command_data_off regex"
-                            .to_owned(),
-                    )),
-                }
-            }
+            None => match get_mapped_matches_from_string(&output, &self.command_data_off_regex) {
+                Some(x) => Ok((false, x)),
+                None => Err(BlockError(
+                    "is_on_status".to_owned(),
+                    "Unable to match either the command_data_on or the command_data_off regex"
+                        .to_owned(),
+                )),
+            },
         }
     }
 }
@@ -193,17 +187,20 @@ impl Block for SuperToggle {
     fn update(&mut self) -> Result<Option<Update>> {
         let (on, tags) = &self.is_on_status()?;
 
-        self.text.set_icon(match on {
+        let icon = match on {
             true => self.icon_on.as_str(),
             false => self.icon_off.as_str(),
-        })?;
+        };
+
+        self.text.set_icon(icon)?;
 
         let format = match on {
             true => &self.format_on,
             false => &self.format_off,
         };
 
-        self.text.set_texts(format.render(&tags)?);
+        let output = format.render(&tags)?;
+        self.text.set_texts(output.clone());
 
         self.text.set_state(State::Idle);
 
@@ -223,9 +220,8 @@ impl Block for SuperToggle {
             &self.command_on
         };
 
-        let output = self
-            .get_output_of_command(cmd)
-            .block_error("toggle", "Failed to run toggle command");
+        let output =
+            get_output_of_command(cmd).block_error("toggle", "Failed to run toggle command");
 
         if output.is_ok() {
             self.text.set_state(State::Idle);
