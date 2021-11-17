@@ -33,7 +33,6 @@ pub struct SuperToggle {
     icon_on: String,
     icon_off: String,
     update_interval: Option<Duration>,
-    // toggled: bool,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -99,11 +98,11 @@ impl SuperToggleConfig {
     // }
 
     fn default_command_data_on_regex() -> Regex {
-        Regex::new(r"(?m)Tracked\s+(\d{1,2}:\d{1,2}:\d{1,2})").unwrap()
+        Regex::new(r"(?m)Tracking \s(?P<tags>.*)$Tracked\s+(?P<hours>\d{1,2}):(?P<minutes>\d{1,2}):(?P<seconds>\d{1,2})").unwrap()
     }
 
     fn default_command_data_off_regex() -> Regex {
-        Regex::new(r"(?m)Tracked\s+(\d{1,2}:\d{1,2}:\d{1,2})").unwrap()
+        Regex::new(r"(?m)There is no active time tracking\.$").unwrap()
     }
 
     // fn default_command_status_display_regex() -> Regex {
