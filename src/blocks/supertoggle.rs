@@ -94,9 +94,9 @@ impl SuperToggleConfig {
         "timew".to_owned()
     }
 
-    fn default_command_status_display() -> String {
-        "timew day".to_owned()
-    }
+    // fn default_command_status_display() -> String {
+    //     "timew day".to_owned()
+    // }
 
     fn default_command_data_on_regex() -> Regex {
         Regex::new(r"(?m)Tracked\s+(\d{1,2}:\d{1,2}:\d{1,2})").unwrap()
@@ -159,14 +159,26 @@ fn get_output_of_command(command: &str) -> Result<String> {
         .map(|o| Ok(String::from_utf8_lossy(&o.stdout).trim().to_owned()))?
 }
 
-fn get_mapped_matches_from_string(totest: &str, regex: &Regex) -> Option<HashMap<String, Value>> {
-    Some(map!(
-        "testing".to_owned() => Value::from_string("testvalue".to_owned()),
-    ))
+fn get_mapped_matches_from_string<'a>(
+    totest: &'a str,
+    regex: &'a Regex,
+) -> Option<HashMap<&'a str, Value>> {
+    if let Some(captures) = regex.captures(totest) {
+        let mut hash = HashMap::new();
+        for name in regex.capture_names() {
+            if let Some(name) = name {
+                if let Some(value) = captures.name(name) {
+                    hash.insert(name, Value::from_string(value.as_str().to_owned()));
+                }
+            }
+        }
+        return Some(hash);
+    }
+    None
 }
 
 impl SuperToggle {
-    fn is_on_status(&self) -> Result<(bool, HashMap<String, Value>)> {
+    fn is_on_status(&self) -> Result<(bool, HashMap<&str, Value>)> {
         let output = get_output_of_command(&self.command_current_state)?;
 
         match get_mapped_matches_from_string(&output, &self.command_data_on_regex) {
