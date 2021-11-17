@@ -5,9 +5,8 @@ use std::process::Command;
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
-use serde::Deserialize;
-// use serde_derive::{Serialize, Deserialize};
 use regex::Regex;
+use serde::Deserialize;
 
 use crate::blocks::{Block, ConfigBlock, Update};
 use crate::config::SharedConfig;
@@ -43,15 +42,15 @@ pub struct SuperToggleConfig {
     pub interval: Option<Duration>,
 
     /// Shell Command to determine SuperToggle state.
-    #[serde(default = "SuperToggleConfig::default_command_current_state")]
+    // #[serde(default = "SuperToggleConfig::default_command_current_state")]
     pub command_current_state: String,
 
     /// Shell Command to enable SuperToggle time tracking
-    #[serde(default = "SuperToggleConfig::default_command_on")]
+    // #[serde(default = "SuperToggleConfig::default_command_on")]
     pub command_on: String,
 
     /// Shell Command to disable SuperToggle time tracking
-    #[serde(default = "SuperToggleConfig::default_command_off")]
+    // #[serde(default = "SuperToggleConfig::default_command_off")]
     pub command_off: String,
 
     /// Format override
@@ -60,11 +59,11 @@ pub struct SuperToggleConfig {
     /// Format override
     pub format_off: FormatTemplate,
 
-    #[serde(default = "SuperToggleConfig::default_command_data_on_regex")]
+    // #[serde(default = "SuperToggleConfig::default_command_data_on_regex")]
     #[serde(with = "serde_regex")]
     pub command_data_on_regex: Regex,
 
-    #[serde(default = "SuperToggleConfig::default_command_data_off_regex")]
+    // #[serde(default = "SuperToggleConfig::default_command_data_off_regex")]
     #[serde(with = "serde_regex")]
     pub command_data_off_regex: Regex,
 
@@ -81,26 +80,6 @@ pub struct SuperToggleConfig {
 }
 
 impl SuperToggleConfig {
-    fn default_command_on() -> String {
-        "timew continue".to_owned()
-    }
-
-    fn default_command_off() -> String {
-        "timew stop".to_owned()
-    }
-
-    fn default_command_current_state() -> String {
-        "timew; timew day".to_owned()
-    }
-
-    fn default_command_data_on_regex() -> Regex {
-        Regex::new(r"(?m)(?s)Tracking\s+(?P<tags>\w*).*Tracked\s+(?P<hours>\d{1,2}):(?P<minutes>\d{1,2}):(?P<seconds>\d{1,2})").unwrap()
-    }
-
-    fn default_command_data_off_regex() -> Regex {
-        Regex::new(r"(?m)There is no active time tracking\.$").unwrap()
-    }
-
     fn default_icon_on() -> String {
         "toggle_on".to_owned()
     }
@@ -125,10 +104,8 @@ impl ConfigBlock for SuperToggle {
                 .with_text(&block_config.text.unwrap_or_default()),
             command_on: block_config.command_on,
             command_off: block_config.command_off,
-            format_on: block_config
-                .format_on
-                .with_default("TW [ {tags} ] {hours}:{minutes}")?,
-            format_off: block_config.format_off.with_default("TW IDLE")?,
+            format_on: block_config.format_on.with_default("")?,
+            format_off: block_config.format_off.with_default("")?,
             command_current_state: block_config.command_current_state,
             command_data_on_regex: block_config.command_data_on_regex,
             command_data_off_regex: block_config.command_data_off_regex,
@@ -237,7 +214,6 @@ impl Block for SuperToggle {
 
         if output.is_ok() {
             self.text.set_state(State::Idle);
-            // self.text.set_text("Updating...".to_owned());
 
             self.update()?;
 
