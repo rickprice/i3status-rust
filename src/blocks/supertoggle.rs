@@ -178,38 +178,56 @@ fn get_mapped_matches_from_string<'a>(
 }
 
 impl SuperToggle {
-    fn is_on_status(&self) -> Result<(bool, HashMap<&str, Value>)> {
-        let output = get_output_of_command(&self.command_current_state)?;
-
-        match get_mapped_matches_from_string(&output, &self.command_data_on_regex) {
-            Some(x) => Ok((true, x)),
-            None => match get_mapped_matches_from_string(&output, &self.command_data_off_regex) {
-                Some(x) => Ok((false, x)),
-                None => Err(BlockError(
-                    "is_on_status".to_owned(),
-                    "Unable to match either the command_data_on or the command_data_off regex"
-                        .to_owned(),
-                )),
-            },
+    fn is_on_status_from_output(&self, output: &str) -> Result<bool> {
+        if self.command_data_on_regex.is_match(&output) {
+            return Ok(true);
         }
+
+        if self.command_data_off_regex.is_match(&output) {
+            return Ok(false);
+        }
+
+        return Err(BlockError(
+            "is_on_status".to_owned(),
+            "Unable to match either the command_data_on or the command_data_off regex".to_owned(),
+        ));
     }
 }
 
 impl Block for SuperToggle {
     fn update(&mut self) -> Result<Option<Update>> {
-        let (on, tags) = &self.is_on_status()?;
+        let output = get_output_of_command(&self.command_current_state)?;
 
-        self.text.set_icon(match on {
-            true => self.icon_on.as_str(),
-            false => self.icon_off.as_str(),
-        })?;
+        let on = &self.is_on_status_from_output(&output)?;
+        let tags_option = get_mapped_matches_from_string(
+            &output,
+            match on {
+                true => &self.command_data_on_regex,
+                false => &self.command_data_off_regex,
+            },
+        );
 
-        let output = match on {
-            true => self.format_on.render(tags),
-            false => self.format_off.render(tags),
+        match tags_option {
+            Some(tags) => {
+                self.text.set_icon(match on {
+                    true => self.icon_on.as_str(),
+                    false => self.icon_off.as_str(),
+                })?;
+
+                let output = match on {
+                    true => self.format_on.render(&tags),
+                    false => self.format_off.render(&tags),
+                }?;
+
+                self.text.set_texts(output);
+
+                Ok(())
+            }
+            None => Err(BlockError(
+                "update".to_owned(),
+                "Unable to find a match on the command output".to_owned(),
+            )),
         }?;
-
-        self.text.set_texts(output);
 
         self.text.set_state(State::Idle);
 
@@ -221,12 +239,12 @@ impl Block for SuperToggle {
     }
 
     fn click(&mut self, _e: &I3BarEvent) -> Result<()> {
-        let (on, _) = self.is_on_status()?;
+        let output = get_output_of_command(&self.command_current_state)?;
+        let on = &self.is_on_status_from_output(&output)?;
 
-        let cmd = if on {
-            &self.command_off
-        } else {
-            &self.command_on
+        let cmd = match on {
+            true => &self.command_off,
+            false => &self.command_on,
         };
 
         let output =
