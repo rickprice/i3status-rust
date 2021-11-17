@@ -165,11 +165,9 @@ fn get_mapped_matches_from_string<'a>(
 ) -> Option<HashMap<&'a str, Value>> {
     if let Some(captures) = regex.captures(totest) {
         let mut hash = HashMap::new();
-        for name in regex.capture_names() {
-            if let Some(name) = name {
-                if let Some(value) = captures.name(name) {
-                    hash.insert(name, Value::from_string(value.as_str().to_owned()));
-                }
+        for name in regex.capture_names().flatten() {
+            if let Some(value) = captures.name(name) {
+                hash.insert(name, Value::from_string(value.as_str().to_owned()));
             }
         }
         return Some(hash);
@@ -179,18 +177,18 @@ fn get_mapped_matches_from_string<'a>(
 
 impl SuperToggle {
     fn is_on_status_from_output(&self, output: &str) -> Result<bool> {
-        if self.command_data_on_regex.is_match(&output) {
+        if self.command_data_on_regex.is_match(output) {
             return Ok(true);
         }
 
-        if self.command_data_off_regex.is_match(&output) {
+        if self.command_data_off_regex.is_match(output) {
             return Ok(false);
         }
 
-        return Err(BlockError(
+        Err(BlockError(
             "is_on_status".to_owned(),
             "Unable to match either the command_data_on or the command_data_off regex".to_owned(),
-        ));
+        ))
     }
 }
 
