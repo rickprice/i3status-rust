@@ -27,8 +27,8 @@ pub struct SuperToggle {
     command_current_state: String,
     format_on: FormatTemplate,
     format_off: FormatTemplate,
-    command_data_on_regex: Regex,
-    command_data_off_regex: Regex,
+    command_status_on_regex: Regex,
+    command_status_off_regex: Regex,
     icon_on: String,
     icon_off: String,
     update_interval: Option<Duration>,
@@ -59,13 +59,13 @@ pub struct SuperToggleConfig {
     /// Format override
     pub format_off: FormatTemplate,
 
-    // #[serde(default = "SuperToggleConfig::default_command_data_on_regex")]
+    // #[serde(default = "SuperToggleConfig::default_command_status_on_regex")]
     #[serde(with = "serde_regex")]
-    pub command_data_on_regex: Regex,
+    pub command_status_on_regex: Regex,
 
-    // #[serde(default = "SuperToggleConfig::default_command_data_off_regex")]
+    // #[serde(default = "SuperToggleConfig::default_command_status_off_regex")]
     #[serde(with = "serde_regex")]
-    pub command_data_off_regex: Regex,
+    pub command_status_off_regex: Regex,
 
     /// Icon ID when time tracking is on (default is "toggle_on")
     #[serde(default = "SuperToggleConfig::default_icon_on")]
@@ -107,8 +107,8 @@ impl ConfigBlock for SuperToggle {
             format_on: block_config.format_on.with_default("")?,
             format_off: block_config.format_off.with_default("")?,
             command_current_state: block_config.command_current_state,
-            command_data_on_regex: block_config.command_data_on_regex,
-            command_data_off_regex: block_config.command_data_off_regex,
+            command_status_on_regex: block_config.command_status_on_regex,
+            command_status_off_regex: block_config.command_status_off_regex,
             icon_on: block_config.icon_on,
             icon_off: block_config.icon_off,
             update_interval: block_config.interval,
@@ -141,11 +141,11 @@ fn get_mapped_matches_from_string<'a>(
 
 impl SuperToggle {
     fn is_on_status_from_output(&self, output: &str) -> Result<bool> {
-        if self.command_data_on_regex.is_match(output) {
+        if self.command_status_on_regex.is_match(output) {
             return Ok(true);
         }
 
-        if self.command_data_off_regex.is_match(output) {
+        if self.command_status_off_regex.is_match(output) {
             return Ok(false);
         }
 
@@ -164,8 +164,8 @@ impl Block for SuperToggle {
         let tags_option = get_mapped_matches_from_string(
             &output,
             match on {
-                true => &self.command_data_on_regex,
-                false => &self.command_data_off_regex,
+                true => &self.command_status_on_regex,
+                false => &self.command_status_off_regex,
             },
         );
 
