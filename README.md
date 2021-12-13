@@ -8,20 +8,13 @@ For a list of available blocks, see the [block documentation](https://github.com
 
 ## Requirements
 
-The Rust compiler `rustc`, `cargo` package manager, C compiler `gcc` and `libssl-dev` packages are required to build the binary.
-
-We also require Libdbus 1.6 or higher. On some older systems this may require installing `libdbus-1-dev`. 
-
-Compilation is only tested with very recent stable versions of `rustc`. If you use a distro with older Rust packages, consider using [rustup](https://rustup.rs/) to install a newer toolchain.
-
-Most blocks assume you are running Linux, and some have their own system requirements; these are mentioned in the [block documentation](https://github.com/greshake/i3status-rust/blob/master/doc/blocks.md).
+Most blocks assume you are running Linux, and some have their own system requirements; refer to the block documentation.
 
 Optional:
 
 * Font Awesome 4.x is required when using the icons config `name = "awesome"`. For version 5, use `name = "awesome5"`. On Arch Linux version 4 is available in the [`AUR`](https://aur.archlinux.org/packages/ttf-font-awesome-4/), and version 5 is available [`here`](https://www.archlinux.org/packages/community/any/ttf-font-awesome/).
 * For icons config `name = material`, a patched version of Google's MaterialIcons-Regular.ttf is required which includes \u{0020} (space), sets a descent ands lower all glyphs to properly align. It can be found [here](https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf).
 * Powerline Fonts are required for all themes using the powerline arrow char.
-* `gperftools` is required for building with the `"profiling"` feature flag (disabled by default).
 
 ## Getting Started
 
@@ -37,16 +30,7 @@ Stable releases are packaged on some distributions:
 
 * With [Home Manager](https://github.com/nix-community/home-manager): `programs.i3status-rust.enable = true` [see available options](https://nix-community.github.io/home-manager/options.html#opt-programs.i3status-rust.enable)
 
-Otherwise, you can install from source:
-
-```shell
-$ git clone https://github.com/greshake/i3status-rust
-$ cd i3status-rust
-$ cargo install --path .
-$ ./install.sh
-```
-
-By default, this will install the binary to `~/.cargo/bin/i3status-rs`.
+Otherwise refer to [manual install](https://github.com/greshake/i3status-rust/blob/master/doc/dev.md) docs
 
 ## Configuration
 
